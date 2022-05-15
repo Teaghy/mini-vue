@@ -1,34 +1,18 @@
-import { isObject } from '../../shared';
-import { track, trigger } from './effect';
-export const reactiveMap = new WeakMap();
+import { track, trigger } from "./effect";
 
-export function reactive(target) {
-  // console.log(target)
-  if (!isObject(target)) {
-    return target
-  }
-  // console.log(target)
-  const proxy = new Proxy(target, {
-    //get时进行依赖收集
-      get(target, key, receiver) {
-          const res = Reflect.get(target, key, receiver);
-          if (isObject(res)) {
-            return reactive(res)
-          }
-          track(target, key);
-          return res;
-      },
-      //set 通知更新
-      set(target, key, value, receiver) {
-          Reflect.set(target, key, value, receiver);
-          trigger(target, key);
-          return true;
-      },
-      //deleteProperty 通知更新
-      deleteProperty(target, key) {
-          Reflect.deleteProperty(target, key);
-          return true;
-      },
+export function reactive(raw) {
+  return new Proxy(raw, {
+    get(target, key, receiver) {
+      const res = Reflect.get(target, key, receiver);
+      // 依赖收集
+      track(target, key);
+      return res;
+    },
+    set(target, key, value, receiver) {
+      const res = Reflect.set(target, key, value, receiver);
+      // 依赖触发
+      trigger(target, key)
+      return res;
+    }
   })
-  return proxy;
 }

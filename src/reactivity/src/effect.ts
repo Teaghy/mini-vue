@@ -1,46 +1,52 @@
 let activeEffect;
-
-export function effect(fn) {
-  const effectFn = () => {
-    try {
-      activeEffect = effectFn;
-      return fn();
-    } finally {
-      // todo
-    }
+const targetMap = new Map();
+class ReactiveEffect {
+  // _fn: Function;
+  private _fn: any;
+  constructor(fn: Function) {
+    // this._fn = fn;
+    this._fn = fn;
   }
-  effectFn();
-  return effectFn;
-}
+  run() {
+    activeEffect = this;
+    return this._fn();
+  }
+};
 
-const targetMap = new WeakMap();
-// window.targetMap = targetMap;
-/**
- * 
- * target设计成weakMap 存储副作用
- */
-// {
-//   [target]: { reactive 作为key value是一个map结构
-//     [key]: [] key是reactive中的键值， value是set
-//   }
-// }
 export function track(target, key) {
-  if (!activeEffect) {
-    return ;
-  }
+  // const dep = new Set();
+  // 先检查targetMap中有没有target 
   let depsMap = targetMap.get(target);
+  // 如果没有 targetMap 设置一个为一个map
+  // targetMap结构为
+  // {
+  //   [target]: { // new Map() depsMap
+  //     key: [  // new Set() deps
+  //     activeEffect
+  //     ] 
+  //   }
+  // }
   if (!depsMap) {
-    targetMap.set(target, (depsMap = new Map()))
+    depsMap = new Map();
+    targetMap.set(target, depsMap);
   }
   let deps = depsMap.get(key);
   if (!deps) {
-    depsMap.set(key, (deps = new Set()))
+    deps = new Set();
+    depsMap.set(key, deps);
   }
   deps.add(activeEffect);
 }
 
 export function trigger(target, key) {
-  // debugger
+  // targetMap结构为
+  // {
+  //   [target]: { // new Map() depsMap
+  //     key: [  // new Set() deps
+  //     activeEffect
+  //     ] 
+  //   }
+  // }
   const depsMap = targetMap.get(target);
   if (!depsMap) {
     return;
@@ -49,8 +55,14 @@ export function trigger(target, key) {
   if (!deps) {
     return;
   }
-  deps.forEach(effectFn => {
-    effectFn()
+  deps.forEach((effectFn) => {
+    effectFn.run();
   });
+}
+
+export function effect(fn) {
+  const _effect = new ReactiveEffect(fn);
+  _effect.run();
+  return _effect.run.bind(_effect);
 }
 
