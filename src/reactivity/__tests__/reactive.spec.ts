@@ -7,7 +7,7 @@ describe('reactive', () => {
     };
 
     const observed = reactive(origin);
-
+    debugger
     expect(observed).not.toBe(origin);
     expect(observed.foo).toBe(1);
   })

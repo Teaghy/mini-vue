@@ -6,3 +6,5 @@ export function isObject(value) {
   // console.log(toRawType(value))
   return toRawType(value) === 'Object';
 }
+
+export const extend = Object.assign;
